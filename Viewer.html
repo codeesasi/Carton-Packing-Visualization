@@ -54,10 +54,13 @@ function init() {
     // Load layout.json and add boxes
     fetch('layout.json')
       .then(response => response.json())
-      .then(data => {
+      .then(async data => {
         // Support multiple containers: box can be an array or an object
         const boxes = Array.isArray(data.box) ? data.box : [data.box];
         const items = data.items || [];
+
+        // Store all item meshes and their target positions for animation
+        let itemAnims = [];
 
         boxes.forEach((box, boxIdx) => {
           // --- Draw the pallet (2D design) under the container ---
@@ -154,23 +157,55 @@ function init() {
 
           scene.add(containerGroup);
 
-          // --- Place each package (item) inside the container ---
+          // --- Prepare each package (item) inside the container ---
           // Filter items for this box if needed (e.g., by box id or other property)
           items
             // .filter(item => item.boxId === box.id) // Uncomment if using boxId
             .forEach((item, idx) => {
-              // Dynamically generate box size from JSON item properties
               const geometry = new THREE.BoxGeometry(item.width, item.height, item.depth);
               const material = new THREE.MeshLambertMaterial({ color: item.color });
               const mesh = new THREE.Mesh(geometry, material);
-              mesh.position.set(
-                item.x + item.width / 2 + x0,
-                item.y + item.height / 2 + y0,
-                item.z + item.depth / 2 + z0
-              );
-              scene.add(mesh);
+              // Calculate final position
+              const targetPos = {
+                x: item.x + item.width / 2 + box.x,
+                y: item.y + item.height / 2 + box.y,
+                z: item.z + item.depth / 2 + box.z
+              };
+              // Start above the container
+              mesh.position.set(targetPos.x, targetPos.y + 10, targetPos.z);
+              itemAnims.push({ mesh, targetY: targetPos.y });
             });
         });
+
+        // Animate dropping items one by one
+        for (let i = 0; i < itemAnims.length; i++) {
+          const { mesh, targetY } = itemAnims[i];
+          scene.add(mesh);
+          await dropToY(mesh, targetY, 600); // 600ms drop
+        }
+
+        // Helper: animate mesh dropping to targetY
+        function dropToY(mesh, targetY, duration) {
+          return new Promise(resolve => {
+            const startY = mesh.position.y;
+            const deltaY = targetY - startY;
+            const startTime = performance.now();
+            function animateDrop(now) {
+              const elapsed = now - startTime;
+              const t = Math.min(elapsed / duration, 1);
+              // Ease out bounce
+              let bounce = t < 1 ? (1 - Math.pow(1 - t, 2)) : 1;
+              mesh.position.y = startY + deltaY * bounce;
+              if (t < 1) {
+                requestAnimationFrame(animateDrop);
+              } else {
+                mesh.position.y = targetY;
+                resolve();
+              }
+            }
+            requestAnimationFrame(animateDrop);
+          });
+        }
       })
       .catch(err => console.error("Failed to load layout.json", err));
 }
