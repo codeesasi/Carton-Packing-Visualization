@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Bottom Lock Carton Box</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.112/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.112/examples/jsm/controls/OrbitControls.js";
+
+// Carton dimensions in inches (converted to meters)
+const inch = 0.0254;
+const boxLength = 2.4 * inch; // height (vertical)
+const boxWidth = 2.4 * inch;
+const boxDepth = 7.0 * inch;
+
+// Scene setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0.15, 0.18, 0.32);
+
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, boxLength/2, 0);
+controls.update();
+
+scene.add(new THREE.AmbientLight(0x888888));
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(1, 2, 2);
+scene.add(light);
+
+// Carton group
+const carton = new THREE.Group();
+const boxColor = 0xf5deb3; // wheat color
+
+// Main box (walls)
+const boxGeometry = new THREE.BoxGeometry(boxWidth, boxLength, boxDepth);
+const boxMaterial = new THREE.MeshPhongMaterial({ color: boxColor, transparent: true, opacity: 0.92, side: THREE.DoubleSide });
+const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+carton.add(boxMesh);
+
+scene.add(carton);
+
+// Axes helper (optional)
+// scene.add(new THREE.AxesHelper(0.1));
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
