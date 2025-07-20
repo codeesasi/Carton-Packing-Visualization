@@ -108,11 +108,15 @@ function init() {
           // --- Draw the container (outer box) as a 3D box with open front (door) ---
           const containerGroup = new THREE.Group();
 
+          // Assign a color for each container (cycle through a palette or use box.color if present)
+          const containerColors = [0x0077ff, 0xff8800, 0x44bb44, 0xbb44bb, 0x888888, 0x00bcd4, 0xff4444];
+          const containerColor = box.color !== undefined ? box.color : containerColors[boxIdx % containerColors.length];
+          const wallMaterial = new THREE.MeshPhongMaterial({ color: containerColor, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+          const edgeMaterial = new THREE.LineBasicMaterial({ color: containerColor });
+
           // Bottom
           const w = box.width, h = box.height, d = box.depth;
           const x0 = box.x, y0 = box.y, z0 = box.z;
-          const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x0077ff, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
-          const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x0077ff });
 
           const bottomGeom = new THREE.PlaneGeometry(w, d);
           const bottom = new THREE.Mesh(bottomGeom, wallMaterial);
